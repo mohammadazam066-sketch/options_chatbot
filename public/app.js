@@ -9,6 +9,9 @@ let activeUser = null;
 let currentSymbol = 'NIFTY';
 let currentTheme = localStorage.getItem('theme') || 'dark';
 
+// Admin Email Whitelist
+const ADMIN_EMAILS = ['mohammadazam066@gmail.com', 'mohammadazam066'];
+
 // DOM Elements
 const welcomeScreen = document.getElementById('welcomeScreen');
 const welcomeLoginForm = document.getElementById('welcomeLoginForm');
@@ -29,6 +32,7 @@ const closeModalBtn = document.getElementById('closeModalBtn');
 const myAvatar = document.getElementById('myAvatar');
 const myProfileName = document.getElementById('myProfileName');
 const myProfileEmail = document.getElementById('myProfileEmail');
+const adminConnectContainer = document.getElementById('adminConnectContainer');
 const signOutBtn = document.getElementById('signOutBtn');
 
 const refreshStatsBtn = document.getElementById('refreshStatsBtn');
@@ -80,7 +84,6 @@ async function startUserSession(email, name = '') {
     fetchMarketData();
   } catch (err) {
     console.error('[Session Error]:', err);
-    // Fallback: force show app UI even if backend history fetch fails
     if (welcomeScreen) welcomeScreen.classList.add('hidden');
     if (appContainer) appContainer.classList.remove('hidden');
   }
@@ -162,6 +165,18 @@ function setupEventListeners() {
         if (myAvatar) myAvatar.src = activeUser.avatar;
         if (myProfileName) myProfileName.innerText = activeUser.name;
         if (myProfileEmail) myProfileEmail.innerText = activeUser.gmailId;
+
+        // Check if logged in user is Admin (mohammadazam066@gmail.com)
+        const emailLower = activeUser.gmailId.toLowerCase();
+        const isAdmin = ADMIN_EMAILS.some(admin => emailLower.includes(admin));
+
+        if (adminConnectContainer) {
+          if (isAdmin) {
+            adminConnectContainer.classList.remove('hidden');
+          } else {
+            adminConnectContainer.classList.add('hidden');
+          }
+        }
       }
       if (userModal) userModal.classList.remove('hidden');
     });
@@ -250,7 +265,6 @@ async function loginUser(gmailId, displayName = '') {
     }
   } catch (err) {
     console.error('Failed to log in user:', err);
-    // Local fallback for offline/slow connection
     activeUser = {
       gmailId: gmailId,
       name: displayName || gmailId.split('@')[0],
