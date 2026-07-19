@@ -37,7 +37,7 @@
         </div>
         <div class="input-group">
           <label for="welcomeNameInput">Trader Name (Optional):</label>
-          <input type="text" id="welcomeNameInput" placeholder="e.g. Rahul Sharma">
+          <input type="text" id="welcomeNameInput" placeholder="e.g. Mohammad Azam">
         </div>
         <button type="submit" class="welcome-submit-btn">🚀 Start Private AI Session</button>
       </form>
@@ -210,7 +210,7 @@
       </button>
     </nav>
 
-    <!-- 100% PRIVATE "My Account" Modal (NO other users visible) -->
+    <!-- PRIVATE "My Account" Modal with Admin Upstox Controller -->
     <div id="userModal" class="modal-overlay hidden">
       <div class="modal-card">
         <div class="modal-header">
@@ -228,7 +228,15 @@
             </div>
           </div>
 
-          <div style="margin-top:20px; border-top:1px solid var(--border-color); padding-top:16px;">
+          <!-- Admin Upstox Controller (Inside My Account) -->
+          <div id="adminConnectContainer" style="margin-top:14px; padding:12px; background:rgba(34, 197, 94, 0.08); border:1px solid rgba(34, 197, 94, 0.3); border-radius:10px; text-align:center;">
+            <span style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:6px;">⚡ Broker Data Controller:</span>
+            <a id="adminUpstoxBtn" href="/api/auth/upstox/login" style="display:inline-flex; align-items:center; gap:6px; background:var(--accent-green); color:#000; font-weight:700; font-size:12px; padding:8px 14px; border-radius:20px; text-decoration:none;">
+              ⚡ Connect Upstox Live Feed
+            </a>
+          </div>
+
+          <div style="margin-top:14px; border-top:1px solid var(--border-color); padding-top:12px;">
             <button id="signOutBtn" class="signout-btn" style="width:100%; padding:10px; background:rgba(239, 68, 68, 0.1); color:var(--accent-red); border:1px solid var(--accent-red); border-radius:10px; font-weight:600; cursor:pointer;">
               🚪 Sign Out of My Account
             </button>
