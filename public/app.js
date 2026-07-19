@@ -32,7 +32,7 @@ const closeModalBtn = document.getElementById('closeModalBtn');
 const myAvatar = document.getElementById('myAvatar');
 const myProfileName = document.getElementById('myProfileName');
 const myProfileEmail = document.getElementById('myProfileEmail');
-const adminConnectContainer = document.getElementById('adminConnectContainer');
+const adminSlot = document.getElementById('adminSlot');
 const signOutBtn = document.getElementById('signOutBtn');
 
 const refreshStatsBtn = document.getElementById('refreshStatsBtn');
@@ -51,10 +51,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
 
   if (activeGmailId && activeGmailId.trim().length > 0) {
-    // User is already signed in
     await startUserSession(activeGmailId);
   } else {
-    // Show Welcome Sign-In Screen First
     showWelcomeScreen();
   }
 });
@@ -158,7 +156,7 @@ function setupEventListeners() {
 
   if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
 
-  // My Account Modal
+  // My Account Modal (Dynamic Admin Slot Injection)
   if (userProfileBtn) {
     userProfileBtn.addEventListener('click', () => {
       if (activeUser) {
@@ -166,13 +164,20 @@ function setupEventListeners() {
         if (myProfileName) myProfileName.innerText = activeUser.name;
         if (myProfileEmail) myProfileEmail.innerText = activeUser.gmailId;
 
-        // STRICT CHECK: ONLY EXACT MATCH mohammadazam066@gmail.com SEES THE UPSTOX BUTTON
+        // DYNAMIC INJECTION: Only create and show button if email is EXACTLY mohammadazam066@gmail.com
         const currentEmail = (activeUser.gmailId || '').trim().toLowerCase();
-        if (adminConnectContainer) {
+        if (adminSlot) {
           if (currentEmail === ADMIN_EMAIL) {
-            adminConnectContainer.classList.remove('hidden');
+            adminSlot.innerHTML = `
+              <div style="margin-top:14px; padding:12px; background:rgba(34, 197, 94, 0.08); border:1px solid rgba(34, 197, 94, 0.3); border-radius:10px; text-align:center;">
+                <span style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:6px;">⚡ Owner Broker Data Controller:</span>
+                <a href="/api/auth/upstox/login" style="display:inline-flex; align-items:center; gap:6px; background:var(--accent-green); color:#000; font-weight:700; font-size:12px; padding:8px 14px; border-radius:20px; text-decoration:none;">
+                  ⚡ Connect Upstox Live Feed
+                </a>
+              </div>
+            `;
           } else {
-            adminConnectContainer.classList.add('hidden');
+            adminSlot.innerHTML = ''; // Absolute zero HTML for all other users
           }
         }
       }
