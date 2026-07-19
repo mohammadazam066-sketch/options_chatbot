@@ -1,6 +1,6 @@
 /**
  * OptionPulse AI Client Application
- * Features Strict Private Onboarding, Gmail Auth, Private Chat History, Theme Switcher & Upstox Live Stream
+ * Features Strict Private Onboarding, Gmail Auth, Persistent Dual-Sync Chat History (Server + LocalStorage Backup), Theme Switcher & Upstox Live Stream
  */
 
 // Application State
@@ -73,6 +73,14 @@ function showWelcomeScreen() {
 async function startUserSession(email, name = '') {
   try {
     await loginUser(email, name);
+    
+    // Dual Sync: Load local backup first so chat is instant & never missing
+    const localBackup = getLocalChatBackup(email);
+    if (localBackup && localBackup.length > 0) {
+      renderChatHistory(localBackup);
+    }
+
+    // Fetch server history and merge/update
     await fetchChatHistory(email);
 
     if (welcomeScreen) welcomeScreen.classList.add('hidden');
@@ -84,6 +92,26 @@ async function startUserSession(email, name = '') {
     console.error('[Session Error]:', err);
     if (welcomeScreen) welcomeScreen.classList.add('hidden');
     if (appContainer) appContainer.classList.remove('hidden');
+  }
+}
+
+// LocalStorage Backup Helpers (Guarantees zero lost chats)
+function getLocalChatBackup(gmailId) {
+  try {
+    const key = `optionpulse_chat_${gmailId.toLowerCase().trim()}`;
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveLocalChatBackup(gmailId, history) {
+  try {
+    const key = `optionpulse_chat_${gmailId.toLowerCase().trim()}`;
+    localStorage.setItem(key, JSON.stringify(history));
+  } catch (e) {
+    console.warn('Failed to save chat to localStorage backup:', e);
   }
 }
 
@@ -134,7 +162,6 @@ function showToast(message) {
 
 // Setup Event Listeners
 function setupEventListeners() {
-  // Onboarding Welcome Form Submit
   if (welcomeLoginForm) {
     welcomeLoginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -146,7 +173,6 @@ function setupEventListeners() {
     });
   }
 
-  // Sign Out Button
   if (signOutBtn) {
     signOutBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -156,7 +182,7 @@ function setupEventListeners() {
 
   if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
 
-  // My Account Modal (Dynamic Admin Slot Injection)
+  // My Account Modal
   if (userProfileBtn) {
     userProfileBtn.addEventListener('click', () => {
       if (activeUser) {
@@ -164,7 +190,6 @@ function setupEventListeners() {
         if (myProfileName) myProfileName.innerText = activeUser.name;
         if (myProfileEmail) myProfileEmail.innerText = activeUser.gmailId;
 
-        // DYNAMIC INJECTION: Only create and show button if email is EXACTLY mohammadazam066@gmail.com
         const currentEmail = (activeUser.gmailId || '').trim().toLowerCase();
         if (adminSlot) {
           if (currentEmail === ADMIN_EMAIL) {
@@ -177,7 +202,7 @@ function setupEventListeners() {
               </div>
             `;
           } else {
-            adminSlot.innerHTML = ''; // Absolute zero HTML for all other users
+            adminSlot.innerHTML = '';
           }
         }
       }
@@ -264,7 +289,10 @@ async function loginUser(gmailId, displayName = '') {
       if (currentAvatar) currentAvatar.src = activeUser.avatar;
       if (currentUserName) currentUserName.innerText = activeUser.name;
 
-      renderChatHistory(activeUser.chatHistory || []);
+      if (data.user.chatHistory && data.user.chatHistory.length > 0) {
+        renderChatHistory(data.user.chatHistory);
+        saveLocalChatBackup(activeGmailId, data.user.chatHistory);
+      }
     }
   } catch (err) {
     console.error('Failed to log in user:', err);
@@ -272,7 +300,7 @@ async function loginUser(gmailId, displayName = '') {
       gmailId: gmailId,
       name: displayName || gmailId.split('@')[0],
       avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(gmailId)}`,
-      chatHistory: []
+      chatHistory: getLocalChatBackup(gmailId) || []
     };
     activeGmailId = gmailId;
     localStorage.setItem('activeGmailId', activeGmailId);
@@ -286,11 +314,21 @@ async function fetchChatHistory(gmailId) {
   try {
     const res = await fetch(`/api/chat/history?gmailId=${encodeURIComponent(gmailId)}`);
     const data = await res.json();
-    if (data.history) {
+    if (data.history && data.history.length > 0) {
       renderChatHistory(data.history);
+      saveLocalChatBackup(gmailId, data.history);
+    } else {
+      const backup = getLocalChatBackup(gmailId);
+      if (backup && backup.length > 0) {
+        renderChatHistory(backup);
+      }
     }
   } catch (err) {
     console.error('Failed to fetch chat history:', err);
+    const backup = getLocalChatBackup(gmailId);
+    if (backup && backup.length > 0) {
+      renderChatHistory(backup);
+    }
   }
 }
 
@@ -302,11 +340,18 @@ async function sendMessage() {
 
   userInput.value = '';
 
-  appendChatBubble({
+  const userMsgObj = {
+    id: `msg-user-${Date.now()}`,
     sender: 'user',
     text: text,
     timestamp: new Date().toISOString()
-  });
+  };
+
+  appendChatBubble(userMsgObj);
+
+  const currentBackup = getLocalChatBackup(activeGmailId) || [];
+  currentBackup.push(userMsgObj);
+  saveLocalChatBackup(activeGmailId, currentBackup);
 
   const typingId = `typing-${Date.now()}`;
   appendTypingIndicator(typingId);
@@ -325,18 +370,13 @@ async function sendMessage() {
 
     removeElement(typingId);
 
-    if (data.success) {
-      if (data.updatedHistory) {
-        renderChatHistory(data.updatedHistory);
-      } else if (data.message) {
-        appendChatBubble(data.message);
-      }
-    } else {
-      appendChatBubble({
-        sender: 'bot',
-        text: '⚠️ Unable to process request. Please try again.',
-        timestamp: new Date().toISOString()
-      });
+    if (data.success && data.updatedHistory) {
+      renderChatHistory(data.updatedHistory);
+      saveLocalChatBackup(activeGmailId, data.updatedHistory);
+    } else if (data.message) {
+      appendChatBubble(data.message);
+      currentBackup.push(data.message);
+      saveLocalChatBackup(activeGmailId, currentBackup);
     }
   } catch (err) {
     removeElement(typingId);
@@ -352,6 +392,7 @@ async function sendMessage() {
 async function clearChat() {
   if (!confirm('Are you sure you want to clear your saved chat history?')) return;
   try {
+    localStorage.removeItem(`optionpulse_chat_${activeGmailId.toLowerCase().trim()}`);
     const res = await fetch('/api/chat/clear', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
