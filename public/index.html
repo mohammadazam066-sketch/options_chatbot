@@ -52,36 +52,34 @@
     </div>
   </div>
 
-  <!-- Main App Layout (Hidden until signed in) -->
+  <!-- Main App Layout -->
   <div id="appContainer" class="app-container hidden">
 
-    <!-- Top Navigation Header -->
+    <!-- Clean Consumer Header (No Admin Connect Buttons) -->
     <header class="app-header">
       <div class="brand-info">
         <div class="logo-icon">📈</div>
         <div>
           <h1 class="app-title">OptionPulse AI</h1>
-          <span class="app-subtitle" id="dataSourceBadge">F&O Assistant</span>
+          <span class="app-subtitle" id="dataSourceBadge">F&O Live Feed 🟢</span>
         </div>
       </div>
 
-      <!-- Controls: Upstox Broker Connect, Theme Toggle, Index Select, Profile Switcher -->
+      <!-- Consumer Controls: Theme Toggle, Index Select, Account Switcher -->
       <div class="header-actions">
-        <a id="connectBrokerBtn" href="/api/auth/upstox/login" class="broker-connect-btn" title="Connect Upstox Broker API">
-          <span class="broker-icon">⚡</span>
-          <span id="brokerStatusLabel" class="broker-label">Connect Upstox</span>
-        </a>
-
+        <!-- Theme Toggle Button -->
         <button id="themeToggleBtn" class="theme-toggle-btn" title="Switch Theme">
           <span id="themeIcon">🌙</span>
           <span id="themeLabel" class="theme-label">Dark</span>
         </button>
 
+        <!-- Index Selector -->
         <select id="indexSelector" class="index-select">
           <option value="NIFTY">NIFTY 50</option>
           <option value="BANKNIFTY">BANK NIFTY</option>
         </select>
 
+        <!-- Profile Switcher -->
         <button id="userProfileBtn" class="user-profile-btn" title="Switch Account">
           <img id="currentAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Trader" alt="User Avatar" class="avatar-img">
           <span id="currentUserName" class="user-name-label">Trader</span>
