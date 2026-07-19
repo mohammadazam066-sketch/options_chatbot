@@ -46,23 +46,45 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTheme(currentTheme);
   setupEventListeners();
 
-  if (activeGmailId) {
+  if (activeGmailId && activeGmailId.trim().length > 0) {
     // User is already signed in
-    welcomeScreen.classList.add('hidden');
-    appContainer.classList.remove('hidden');
-
-    checkBrokerStatus();
-    await loginUser(activeGmailId);
-    await fetchChatHistory(activeGmailId);
-    fetchMarketData();
-
-    setInterval(fetchMarketData, 8000);
+    await startUserSession(activeGmailId);
   } else {
     // Show Welcome Sign-In Screen First
-    welcomeScreen.classList.remove('hidden');
-    appContainer.classList.add('hidden');
+    showWelcomeScreen();
   }
 });
+
+function showWelcomeScreen() {
+  localStorage.removeItem('activeGmailId');
+  activeGmailId = null;
+  activeUser = null;
+
+  if (welcomeEmailInput) welcomeEmailInput.value = '';
+  if (welcomeNameInput) welcomeNameInput.value = '';
+
+  if (userModal) userModal.classList.add('hidden');
+  if (appContainer) appContainer.classList.add('hidden');
+  if (welcomeScreen) welcomeScreen.classList.remove('hidden');
+}
+
+async function startUserSession(email, name = '') {
+  try {
+    await loginUser(email, name);
+    await fetchChatHistory(email);
+
+    if (welcomeScreen) welcomeScreen.classList.add('hidden');
+    if (appContainer) appContainer.classList.remove('hidden');
+
+    checkBrokerStatus();
+    fetchMarketData();
+  } catch (err) {
+    console.error('[Session Error]:', err);
+    // Fallback: force show app UI even if backend history fetch fails
+    if (welcomeScreen) welcomeScreen.classList.add('hidden');
+    if (appContainer) appContainer.classList.remove('hidden');
+  }
+}
 
 // Check Broker Status
 async function checkBrokerStatus() {
@@ -86,13 +108,13 @@ function applyTheme(theme) {
   if (theme === 'light') {
     document.body.classList.remove('dark-theme');
     document.body.classList.add('light-theme');
-    themeIcon.innerText = '☀️';
-    themeLabel.innerText = 'Light';
+    if (themeIcon) themeIcon.innerText = '☀️';
+    if (themeLabel) themeLabel.innerText = 'Light';
   } else {
     document.body.classList.remove('light-theme');
     document.body.classList.add('dark-theme');
-    themeIcon.innerText = '🌙';
-    themeLabel.innerText = 'Dark';
+    if (themeIcon) themeIcon.innerText = '🌙';
+    if (themeLabel) themeLabel.innerText = 'Dark';
   }
 }
 
@@ -101,6 +123,7 @@ function toggleTheme() {
 }
 
 function showToast(message) {
+  if (!toastNotification || !toastMsg) return;
   toastMsg.innerText = message;
   toastNotification.classList.remove('hidden');
   setTimeout(() => {
@@ -110,65 +133,76 @@ function showToast(message) {
 
 // Setup Event Listeners
 function setupEventListeners() {
-  // Onboarding Welcome Form
-  welcomeLoginForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const email = welcomeEmailInput.value.trim();
-    const name = welcomeNameInput.value.trim();
-    if (email) {
-      await performSignIn(email, name);
-    }
-  });
-
-  // Sign Out Button
-  if (signOutBtn) {
-    signOutBtn.addEventListener('click', () => {
-      localStorage.removeItem('activeGmailId');
-      activeGmailId = null;
-      activeUser = null;
-      userModal.classList.add('hidden');
-      appContainer.classList.add('hidden');
-      welcomeScreen.classList.remove('hidden');
+  // Onboarding Welcome Form Submit
+  if (welcomeLoginForm) {
+    welcomeLoginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = welcomeEmailInput ? welcomeEmailInput.value.trim() : '';
+      const name = welcomeNameInput ? welcomeNameInput.value.trim() : '';
+      if (email) {
+        await startUserSession(email, name);
+      }
     });
   }
 
-  themeToggleBtn.addEventListener('click', toggleTheme);
+  // Sign Out Button
+  if (signOutBtn) {
+    signOutBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showWelcomeScreen();
+    });
+  }
 
-  // My Account Modal (Only shows logged-in user's private info)
-  userProfileBtn.addEventListener('click', () => {
-    if (activeUser) {
-      myAvatar.src = activeUser.avatar;
-      myProfileName.innerText = activeUser.name;
-      myProfileEmail.innerText = activeUser.gmailId;
-    }
-    userModal.classList.remove('hidden');
-  });
+  if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
 
-  closeModalBtn.addEventListener('click', () => {
-    userModal.classList.add('hidden');
-  });
+  // My Account Modal
+  if (userProfileBtn) {
+    userProfileBtn.addEventListener('click', () => {
+      if (activeUser) {
+        if (myAvatar) myAvatar.src = activeUser.avatar;
+        if (myProfileName) myProfileName.innerText = activeUser.name;
+        if (myProfileEmail) myProfileEmail.innerText = activeUser.gmailId;
+      }
+      if (userModal) userModal.classList.remove('hidden');
+    });
+  }
 
-  userModal.addEventListener('click', (e) => {
-    if (e.target === userModal) userModal.classList.add('hidden');
-  });
+  if (closeModalBtn) {
+    closeModalBtn.addEventListener('click', () => {
+      if (userModal) userModal.classList.add('hidden');
+    });
+  }
 
-  indexSelector.addEventListener('change', (e) => {
-    currentSymbol = e.target.value;
-    document.getElementById('statsSymbol').innerText = currentSymbol;
-    fetchMarketData();
-  });
+  if (userModal) {
+    userModal.addEventListener('click', (e) => {
+      if (e.target === userModal) userModal.classList.add('hidden');
+    });
+  }
 
-  sendBtn.addEventListener('click', sendMessage);
-  userInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') sendMessage();
-  });
+  if (indexSelector) {
+    indexSelector.addEventListener('change', (e) => {
+      currentSymbol = e.target.value;
+      const statsSymbol = document.getElementById('statsSymbol');
+      if (statsSymbol) statsSymbol.innerText = currentSymbol;
+      fetchMarketData();
+    });
+  }
 
-  clearChatBtn.addEventListener('click', clearChat);
+  if (sendBtn) sendBtn.addEventListener('click', sendMessage);
+  if (userInput) {
+    userInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendMessage();
+    });
+  }
+
+  if (clearChatBtn) clearChatBtn.addEventListener('click', clearChat);
 
   document.querySelectorAll('.chip-btn').forEach(chip => {
     chip.addEventListener('click', () => {
-      userInput.value = chip.getAttribute('data-query');
-      sendMessage();
+      if (userInput) {
+        userInput.value = chip.getAttribute('data-query');
+        sendMessage();
+      }
     });
   });
 
@@ -178,32 +212,21 @@ function setupEventListeners() {
       document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active-view'));
 
       tab.classList.add('active');
-      document.getElementById(tab.getAttribute('data-target')).classList.add('active-view');
+      const targetView = document.getElementById(tab.getAttribute('data-target'));
+      if (targetView) targetView.classList.add('active-view');
     });
   });
 
-  refreshStatsBtn.addEventListener('click', async () => {
-    refreshIcon.classList.add('spin');
-    await fetchMarketData();
-    setTimeout(() => {
-      refreshIcon.classList.remove('spin');
-      showToast('⚡ Live market stats refreshed!');
-    }, 600);
-  });
-}
-
-// Perform Initial Sign In from Welcome Screen
-async function performSignIn(email, name = '') {
-  await loginUser(email, name);
-  await fetchChatHistory(email);
-
-  welcomeScreen.classList.add('hidden');
-  appContainer.classList.remove('hidden');
-
-  checkBrokerStatus();
-  fetchMarketData();
-
-  setInterval(fetchMarketData, 8000);
+  if (refreshStatsBtn) {
+    refreshStatsBtn.addEventListener('click', async () => {
+      if (refreshIcon) refreshIcon.classList.add('spin');
+      await fetchMarketData();
+      setTimeout(() => {
+        if (refreshIcon) refreshIcon.classList.remove('spin');
+        showToast('⚡ Live market stats refreshed!');
+      }, 600);
+    });
+  }
 }
 
 // Login User
@@ -220,13 +243,24 @@ async function loginUser(gmailId, displayName = '') {
       activeGmailId = activeUser.gmailId;
       localStorage.setItem('activeGmailId', activeGmailId);
 
-      currentAvatar.src = activeUser.avatar;
-      currentUserName.innerText = activeUser.name;
+      if (currentAvatar) currentAvatar.src = activeUser.avatar;
+      if (currentUserName) currentUserName.innerText = activeUser.name;
 
       renderChatHistory(activeUser.chatHistory || []);
     }
   } catch (err) {
     console.error('Failed to log in user:', err);
+    // Local fallback for offline/slow connection
+    activeUser = {
+      gmailId: gmailId,
+      name: displayName || gmailId.split('@')[0],
+      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(gmailId)}`,
+      chatHistory: []
+    };
+    activeGmailId = gmailId;
+    localStorage.setItem('activeGmailId', activeGmailId);
+    if (currentAvatar) currentAvatar.src = activeUser.avatar;
+    if (currentUserName) currentUserName.innerText = activeUser.name;
   }
 }
 
@@ -245,6 +279,7 @@ async function fetchChatHistory(gmailId) {
 
 // Send Message
 async function sendMessage() {
+  if (!userInput) return;
   const text = userInput.value.trim();
   if (!text) return;
 
@@ -282,7 +317,7 @@ async function sendMessage() {
     removeElement(typingId);
     appendChatBubble({
       sender: 'bot',
-      text: '⚠️ Connection error. Please check if the server is running.',
+      text: '⚠️ Connection error. Please check your internet connection.',
       timestamp: new Date().toISOString()
     });
   }
@@ -308,12 +343,16 @@ async function clearChat() {
 
 // Render Chat History
 function renderChatHistory(history) {
+  if (!chatWindow) return;
   chatWindow.innerHTML = '';
-  history.forEach(msg => appendChatBubble(msg));
+  if (Array.isArray(history)) {
+    history.forEach(msg => appendChatBubble(msg));
+  }
   scrollToBottom();
 }
 
 function appendChatBubble(msg) {
+  if (!chatWindow) return;
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${msg.sender}`;
 
@@ -334,6 +373,7 @@ function appendChatBubble(msg) {
 }
 
 function appendTypingIndicator(id) {
+  if (!chatWindow) return;
   const bubble = document.createElement('div');
   bubble.id = id;
   bubble.className = 'chat-bubble bot';
@@ -348,7 +388,7 @@ function removeElement(id) {
 }
 
 function scrollToBottom() {
-  chatWindow.scrollTop = chatWindow.scrollHeight;
+  if (chatWindow) chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
 // Fetch Market Summary & Option Chain
@@ -379,22 +419,34 @@ async function fetchMarketData() {
 }
 
 function updateMarketTicker(s) {
-  document.getElementById('tickerSpot').innerText = `₹${s.spotPrice}`;
-  document.getElementById('tickerPcr').innerText = s.pcr;
-  document.getElementById('tickerSupp').innerText = s.support.split('at ')[1]?.split(' ')[0] || '--';
-  document.getElementById('tickerRes').innerText = s.resistance.split('at ')[1]?.split(' ')[0] || '--';
+  const spot = document.getElementById('tickerSpot');
+  const pcr = document.getElementById('tickerPcr');
+  const supp = document.getElementById('tickerSupp');
+  const res = document.getElementById('tickerRes');
+
+  if (spot) spot.innerText = `₹${s.spotPrice}`;
+  if (pcr) pcr.innerText = s.pcr;
+  if (supp) supp.innerText = s.support.split('at ')[1]?.split(' ')[0] || '--';
+  if (res) res.innerText = s.resistance.split('at ')[1]?.split(' ')[0] || '--';
 }
 
 function updateStatsWidget(s) {
-  document.getElementById('mSpot').innerText = `₹${s.spotPrice} (${s.change})`;
-  document.getElementById('mPcr').innerText = `${s.pcr} (${s.sentiment})`;
-  document.getElementById('mSupport').innerText = s.support;
-  document.getElementById('mResistance').innerText = s.resistance;
-  document.getElementById('mMaxPain').innerText = `₹${s.maxPain}`;
+  const mSpot = document.getElementById('mSpot');
+  const mPcr = document.getElementById('mPcr');
+  const mSupport = document.getElementById('mSupport');
+  const mResistance = document.getElementById('mResistance');
+  const mMaxPain = document.getElementById('mMaxPain');
+
+  if (mSpot) mSpot.innerText = `₹${s.spotPrice} (${s.change})`;
+  if (mPcr) mPcr.innerText = `${s.pcr} (${s.sentiment})`;
+  if (mSupport) mSupport.innerText = s.support;
+  if (mResistance) mResistance.innerText = s.resistance;
+  if (mMaxPain) mMaxPain.innerText = `₹${s.maxPain}`;
 }
 
 function renderOptionChainPreview(strikes) {
   const tbody = document.getElementById('optionChainBody');
+  if (!tbody) return;
   tbody.innerHTML = '';
 
   const atmIdx = strikes.findIndex(s => s.isATM);
