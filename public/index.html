@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#090d16">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>OptionPulse AI | F&O Trading Chatbot Platform</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="dark-theme">
+
+  <!-- Welcome / Gmail Sign-In Screen for New Users -->
+  <div id="welcomeScreen" class="welcome-overlay">
+    <div class="welcome-card">
+      <div class="welcome-brand">
+        <div class="welcome-logo">📈</div>
+        <h2>OptionPulse AI</h2>
+        <p class="welcome-tagline">AI-Powered Options & Futures Assistant</p>
+      </div>
+
+      <div class="welcome-features">
+        <div class="feat-item">✨ Simple Language Open Interest (OI) Analysis</div>
+        <div class="feat-item">⚡ Live NIFTY & BANK NIFTY Sentiment</div>
+        <div class="feat-item">🔒 Personal Saved Chat History</div>
+      </div>
+
+      <form id="welcomeLoginForm" class="welcome-form">
+        <div class="input-group">
+          <label for="welcomeEmailInput">Sign in with your Gmail ID:</label>
+          <input type="email" id="welcomeEmailInput" placeholder="trader@gmail.com" required autocomplete="email">
+        </div>
+        <div class="input-group">
+          <label for="welcomeNameInput">Trader Name (Optional):</label>
+          <input type="text" id="welcomeNameInput" placeholder="e.g. Rahul Sharma">
+        </div>
+        <button type="submit" class="welcome-submit-btn">🚀 Start Trading with AI</button>
+      </form>
+
+      <div class="demo-login-prompt">
+        <span>Or try demo profile:</span>
+        <div class="demo-chips">
+          <button class="demo-chip-btn" data-email="rahul.trader@gmail.com">Rahul (Scalper)</button>
+          <button class="demo-chip-btn" data-email="priya.options@gmail.com">Priya (Option Writer)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App Layout (Hidden until signed in) -->
+  <div id="appContainer" class="app-container hidden">
+
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="brand-info">
+        <div class="logo-icon">📈</div>
+        <div>
+          <h1 class="app-title">OptionPulse AI</h1>
+          <span class="app-subtitle" id="dataSourceBadge">F&O Assistant</span>
+        </div>
+      </div>
+
+      <!-- Controls: Upstox Broker Connect, Theme Toggle, Index Select, Profile Switcher -->
+      <div class="header-actions">
+        <a id="connectBrokerBtn" href="/api/auth/upstox/login" class="broker-connect-btn" title="Connect Upstox Broker API">
+          <span class="broker-icon">⚡</span>
+          <span id="brokerStatusLabel" class="broker-label">Connect Upstox</span>
+        </a>
+
+        <button id="themeToggleBtn" class="theme-toggle-btn" title="Switch Theme">
+          <span id="themeIcon">🌙</span>
+          <span id="themeLabel" class="theme-label">Dark</span>
+        </button>
+
+        <select id="indexSelector" class="index-select">
+          <option value="NIFTY">NIFTY 50</option>
+          <option value="BANKNIFTY">BANK NIFTY</option>
+        </select>
+
+        <button id="userProfileBtn" class="user-profile-btn" title="Switch Account">
+          <img id="currentAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Trader" alt="User Avatar" class="avatar-img">
+          <span id="currentUserName" class="user-name-label">Trader</span>
+          <span class="switch-icon">▼</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+
+      <!-- SECTION 1: Chat View -->
+      <section id="chatView" class="view-section active-view">
+        
+        <!-- Live Market Ticker Strip -->
+        <div class="market-ticker" id="marketTicker">
+          <div class="ticker-item">
+            <span class="ticker-label">Spot:</span>
+            <span id="tickerSpot" class="ticker-val">Loading...</span>
+          </div>
+          <div class="ticker-item">
+            <span class="ticker-label">PCR:</span>
+            <span id="tickerPcr" class="ticker-val badge-neutral">--</span>
+          </div>
+          <div class="ticker-item">
+            <span class="ticker-label">Supp:</span>
+            <span id="tickerSupp" class="ticker-val val-green">--</span>
+          </div>
+          <div class="ticker-item">
+            <span class="ticker-label">Res:</span>
+            <span id="tickerRes" class="ticker-val val-red">--</span>
+          </div>
+        </div>
+
+        <!-- 1-Tap Quick Action Chips -->
+        <div class="quick-chips-container">
+          <div class="chips-scroll">
+            <button class="chip-btn" data-query="Analyze RELIANCE option buying setup">📈 Analyze RELIANCE</button>
+            <button class="chip-btn" data-query="Is market Bullish or Bearish based on PCR today?">📊 Bullish or Bearish?</button>
+            <button class="chip-btn" data-query="Where is Strongest Support and Resistance for Nifty?">🎯 Support & Resistance</button>
+            <button class="chip-btn" data-query="What is the OI change for ATM Strike?">⚡ ATM Strike OI Change</button>
+            <button class="chip-btn" data-query="Explain Short Covering in simple words">💡 Short Covering?</button>
+            <button class="chip-btn" data-query="Explain Theta decay in simple words">📘 What is Theta?</button>
+          </div>
+        </div>
+
+        <!-- Chat Stream Window -->
+        <div class="chat-window" id="chatWindow">
+          <!-- Messages rendered dynamically -->
+        </div>
+
+        <!-- Mobile Chat Input Bar -->
+        <div class="chat-input-bar">
+          <button id="clearChatBtn" class="icon-btn-secondary" title="Clear Chat">🗑️</button>
+          <input type="text" id="userInput" placeholder="Ask about any stock (RELIANCE, INFY), OI data, or strategies..." autocomplete="off">
+          <button id="sendBtn" class="send-btn">
+            <span>Send</span>
+            <span class="send-icon">➔</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- SECTION 2: Quick Market Stats View -->
+      <section id="statsView" class="view-section">
+        <div class="stats-card">
+          <div class="card-header">
+            <h3>📊 Live F&O Summary (<span id="statsSymbol">NIFTY</span>)</h3>
+            <button id="refreshStatsBtn" class="refresh-btn">
+              <span id="refreshIcon">🔄</span>
+              <span id="refreshLabel">Refresh</span>
+            </button>
+          </div>
+
+          <div class="metrics-grid">
+            <div class="metric-box">
+              <span class="m-label">Real Spot Price</span>
+              <span id="mSpot" class="m-val">₹--</span>
+            </div>
+            <div class="metric-box">
+              <span class="m-label">Put-Call Ratio (PCR)</span>
+              <span id="mPcr" class="m-val badge-neutral">--</span>
+            </div>
+            <div class="metric-box highlight-green">
+              <span class="m-label">Strongest Support (Max Put OI)</span>
+              <span id="mSupport" class="m-val">--</span>
+            </div>
+            <div class="metric-box highlight-red">
+              <span class="m-label">Strongest Resistance (Max Call OI)</span>
+              <span id="mResistance" class="m-val">--</span>
+            </div>
+            <div class="metric-box">
+              <span class="m-label">Max Pain Strike</span>
+              <span id="mMaxPain" class="m-val">--</span>
+            </div>
+          </div>
+
+          <!-- Quick Option Chain Snippet -->
+          <div class="option-chain-preview">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <h4>⚡ Strike-wise OI Preview</h4>
+              <span id="expiryBadge" style="font-size:11px; color:var(--accent-blue); font-weight:600;">Expiry: Nearest</span>
+            </div>
+            <div class="table-responsive">
+              <table class="simple-table" id="optionChainTable">
+                <thead>
+                  <tr>
+                    <th>Call OI Chg</th>
+                    <th>Strike</th>
+                    <th>Put OI Chg</th>
+                  </tr>
+                </thead>
+                <tbody id="optionChainBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Toast Notification Container -->
+    <div id="toastNotification" class="toast-container hidden">
+      <span id="toastMsg">Market data refreshed!</span>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="mobile-bottom-nav">
+      <button class="nav-tab active" data-target="chatView">
+        <span class="nav-icon">💬</span>
+        <span class="nav-label">AI Chat</span>
+      </button>
+      <button class="nav-tab" data-target="statsView">
+        <span class="nav-icon">📊</span>
+        <span class="nav-label">Live Stats</span>
+      </button>
+    </nav>
+
+    <!-- Multi-User Account Switcher Modal -->
+    <div id="userModal" class="modal-overlay hidden">
+      <div class="modal-card">
+        <div class="modal-header">
+          <h3>👥 Switch Trader Account or Sign Out</h3>
+          <button id="closeModalBtn" class="close-btn">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="section-title">Saved Trader Accounts</div>
+          <div class="user-list" id="presetUserList">
+            <!-- Preset accounts -->
+          </div>
+
+          <div class="divider"><span>OR</span></div>
+
+          <div class="section-title">Sign In with New Gmail ID</div>
+          <form id="gmailLoginForm" class="gmail-form">
+            <div class="input-group">
+              <label for="gmailInput">Gmail Address:</label>
+              <input type="email" id="gmailInput" placeholder="trader@gmail.com" required>
+            </div>
+            <div class="input-group">
+              <label for="nameInput">Trader Name (Optional):</label>
+              <input type="text" id="nameInput" placeholder="e.g. Amit Kumar">
+            </div>
+            <button type="submit" class="primary-btn-block">Sign In / Switch Profile</button>
+          </form>
+          
+          <button id="signOutBtn" class="signout-btn" style="margin-top:12px; width:100%; padding:8px; background:rgba(239, 68, 68, 0.1); color:var(--accent-red); border:1px solid var(--accent-red); border-radius:8px; cursor:pointer;">
+            🚪 Sign Out of Current Account
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
