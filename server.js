@@ -33,7 +33,7 @@ app.post('/api/auth/gmail', (req, res) => {
     return res.status(400).json({ error: 'Gmail ID is required.' });
   }
 
-  const user = userManager.getOrCreateUser(gmailId, displayName);
+  const user = userManager.loginWithGmail(gmailId, displayName);
   return res.json({ success: true, user });
 });
 
@@ -56,23 +56,36 @@ app.post('/api/chat/send', async (req, res) => {
   }
 
   try {
-    const user = userManager.getUserByGmail(gmailId) || { name: 'Trader' };
+    const user = userManager.loginWithGmail(gmailId);
     const responseMessage = await geminiChatbot.processUserQuery(message, symbol || 'NIFTY', user);
+    const botText = typeof responseMessage === 'string' ? responseMessage : (responseMessage.text || 'Analysis complete.');
     
-    // Save both user question and bot answer to user's private chat history
-    userManager.addChatMessage(gmailId, 'user', message);
-    userManager.addChatMessage(gmailId, 'bot', responseMessage.text || responseMessage);
+    // Save user question
+    userManager.addChatMessage(gmailId, {
+      id: `msg-user-${Date.now()}`,
+      sender: 'user',
+      text: message,
+      timestamp: new Date().toISOString()
+    });
+
+    // Save bot response
+    userManager.addChatMessage(gmailId, {
+      id: `msg-bot-${Date.now()}`,
+      sender: 'bot',
+      text: botText,
+      timestamp: new Date().toISOString()
+    });
 
     const updatedHistory = userManager.getUserChatHistory(gmailId);
 
     return res.json({
       success: true,
-      message: responseMessage,
+      message: { sender: 'bot', text: botText, timestamp: new Date().toISOString() },
       updatedHistory
     });
   } catch (err) {
     console.error('[Chat Error]:', err);
-    return res.status(500).json({ error: 'Failed to process AI chat query.' });
+    return res.status(500).json({ error: 'Failed to process AI chat query.', details: err.message });
   }
 });
 
@@ -83,7 +96,7 @@ app.post('/api/chat/clear', (req, res) => {
     return res.status(400).json({ error: 'Gmail ID is required.' });
   }
 
-  const history = userManager.clearUserChatHistory(gmailId);
+  const history = userManager.clearUserHistory(gmailId);
   return res.json({ success: true, history });
 });
 
