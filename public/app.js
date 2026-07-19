@@ -1,6 +1,6 @@
 /**
  * OptionPulse AI Client Application
- * Features Welcome/Sign-In Screen Onboarding, Gmail Auth, Persistent Chat History, Theme Switcher & Upstox Live Stream
+ * Features Strict Private Onboarding, Gmail Auth, Private Chat History, Theme Switcher & Upstox Live Stream
  */
 
 // Application State
@@ -8,7 +8,6 @@ let activeGmailId = localStorage.getItem('activeGmailId') || null;
 let activeUser = null;
 let currentSymbol = 'NIFTY';
 let currentTheme = localStorage.getItem('theme') || 'dark';
-let allUsers = [];
 
 // DOM Elements
 const welcomeScreen = document.getElementById('welcomeScreen');
@@ -27,18 +26,16 @@ const sendBtn = document.getElementById('sendBtn');
 const clearChatBtn = document.getElementById('clearChatBtn');
 const userModal = document.getElementById('userModal');
 const closeModalBtn = document.getElementById('closeModalBtn');
-const presetUserList = document.getElementById('presetUserList');
-const gmailLoginForm = document.getElementById('gmailLoginForm');
-const gmailInput = document.getElementById('gmailInput');
-const nameInput = document.getElementById('nameInput');
+const myAvatar = document.getElementById('myAvatar');
+const myProfileName = document.getElementById('myProfileName');
+const myProfileEmail = document.getElementById('myProfileEmail');
 const signOutBtn = document.getElementById('signOutBtn');
+
 const refreshStatsBtn = document.getElementById('refreshStatsBtn');
 const refreshIcon = document.getElementById('refreshIcon');
 const themeToggleBtn = document.getElementById('themeToggleBtn');
 const themeIcon = document.getElementById('themeIcon');
 const themeLabel = document.getElementById('themeLabel');
-const connectBrokerBtn = document.getElementById('connectBrokerBtn');
-const brokerStatusLabel = document.getElementById('brokerStatusLabel');
 const dataSourceBadge = document.getElementById('dataSourceBadge');
 const expiryBadge = document.getElementById('expiryBadge');
 const toastNotification = document.getElementById('toastNotification');
@@ -55,8 +52,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     appContainer.classList.remove('hidden');
 
     checkBrokerStatus();
-    loadUserAccounts();
-
     await loginUser(activeGmailId);
     await fetchChatHistory(activeGmailId);
     fetchMarketData();
@@ -75,12 +70,8 @@ async function checkBrokerStatus() {
     const res = await fetch('/api/health');
     const data = await res.json();
     if (data.upstoxConnected) {
-      connectBrokerBtn.classList.add('connected');
-      brokerStatusLabel.innerText = 'Upstox Connected 🟢';
       if (dataSourceBadge) dataSourceBadge.innerText = 'Upstox API Live 🔴';
     } else {
-      connectBrokerBtn.classList.remove('connected');
-      brokerStatusLabel.innerText = 'Connect Upstox';
       if (dataSourceBadge) dataSourceBadge.innerText = 'F&O Live Feed 🟢';
     }
   } catch (err) {
@@ -129,14 +120,6 @@ function setupEventListeners() {
     }
   });
 
-  // Demo chips on Welcome Screen
-  document.querySelectorAll('.demo-chip-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const email = btn.getAttribute('data-email');
-      await performSignIn(email);
-    });
-  });
-
   // Sign Out Button
   if (signOutBtn) {
     signOutBtn.addEventListener('click', () => {
@@ -151,8 +134,13 @@ function setupEventListeners() {
 
   themeToggleBtn.addEventListener('click', toggleTheme);
 
+  // My Account Modal (Only shows logged-in user's private info)
   userProfileBtn.addEventListener('click', () => {
-    loadUserAccounts();
+    if (activeUser) {
+      myAvatar.src = activeUser.avatar;
+      myProfileName.innerText = activeUser.name;
+      myProfileEmail.innerText = activeUser.gmailId;
+    }
     userModal.classList.remove('hidden');
   });
 
@@ -162,17 +150,6 @@ function setupEventListeners() {
 
   userModal.addEventListener('click', (e) => {
     if (e.target === userModal) userModal.classList.add('hidden');
-  });
-
-  gmailLoginForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const email = gmailInput.value.trim();
-    const name = nameInput.value.trim();
-    if (email) {
-      loginUser(email, name);
-      userModal.classList.add('hidden');
-      gmailLoginForm.reset();
-    }
   });
 
   indexSelector.addEventListener('change', (e) => {
@@ -224,7 +201,6 @@ async function performSignIn(email, name = '') {
   appContainer.classList.remove('hidden');
 
   checkBrokerStatus();
-  loadUserAccounts();
   fetchMarketData();
 
   setInterval(fetchMarketData, 8000);
@@ -264,37 +240,6 @@ async function fetchChatHistory(gmailId) {
     }
   } catch (err) {
     console.error('Failed to fetch chat history:', err);
-  }
-}
-
-// Load Accounts List for Modal
-async function loadUserAccounts() {
-  try {
-    const res = await fetch('/api/users');
-    const data = await res.json();
-    allUsers = data.users || [];
-
-    presetUserList.innerHTML = '';
-    allUsers.forEach(user => {
-      const isCurrent = activeGmailId && user.gmailId.toLowerCase() === activeGmailId.toLowerCase();
-      const card = document.createElement('div');
-      card.className = `user-card-item ${isCurrent ? 'active' : ''}`;
-      card.innerHTML = `
-        <img src="${user.avatar}" class="avatar-img">
-        <div style="flex:1;">
-          <div style="font-weight:600; font-size:13px;">${user.name} ${isCurrent ? '(Active)' : ''}</div>
-          <div style="font-size:11px; color:var(--text-muted);">${user.gmailId} • ${user.style}</div>
-        </div>
-        <span style="font-size:11px; color:var(--accent-blue);">Select ➔</span>
-      `;
-      card.addEventListener('click', () => {
-        loginUser(user.gmailId);
-        userModal.classList.add('hidden');
-      });
-      presetUserList.appendChild(card);
-    });
-  } catch (err) {
-    console.error('Failed to load user accounts:', err);
   }
 }
 

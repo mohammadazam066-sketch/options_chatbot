@@ -27,7 +27,7 @@
       <div class="welcome-features">
         <div class="feat-item">✨ Simple Language Open Interest (OI) Analysis</div>
         <div class="feat-item">⚡ Live NIFTY & BANK NIFTY Sentiment</div>
-        <div class="feat-item">🔒 Personal Saved Chat History</div>
+        <div class="feat-item">🔒 100% Private & Encrypted Chat History</div>
       </div>
 
       <form id="welcomeLoginForm" class="welcome-form">
@@ -39,23 +39,15 @@
           <label for="welcomeNameInput">Trader Name (Optional):</label>
           <input type="text" id="welcomeNameInput" placeholder="e.g. Rahul Sharma">
         </div>
-        <button type="submit" class="welcome-submit-btn">🚀 Start Trading with AI</button>
+        <button type="submit" class="welcome-submit-btn">🚀 Start Private AI Session</button>
       </form>
-
-      <div class="demo-login-prompt">
-        <span>Or try demo profile:</span>
-        <div class="demo-chips">
-          <button class="demo-chip-btn" data-email="rahul.trader@gmail.com">Rahul (Scalper)</button>
-          <button class="demo-chip-btn" data-email="priya.options@gmail.com">Priya (Option Writer)</button>
-        </div>
-      </div>
     </div>
   </div>
 
   <!-- Main App Layout -->
   <div id="appContainer" class="app-container hidden">
 
-    <!-- Clean Consumer Header (No Admin Connect Buttons) -->
+    <!-- Clean Private Header -->
     <header class="app-header">
       <div class="brand-info">
         <div class="logo-icon">📈</div>
@@ -65,7 +57,7 @@
         </div>
       </div>
 
-      <!-- Consumer Controls: Theme Toggle, Index Select, Account Switcher -->
+      <!-- Private Controls: Theme Toggle, Index Select, My Account -->
       <div class="header-actions">
         <!-- Theme Toggle Button -->
         <button id="themeToggleBtn" class="theme-toggle-btn" title="Switch Theme">
@@ -79,11 +71,10 @@
           <option value="BANKNIFTY">BANK NIFTY</option>
         </select>
 
-        <!-- Profile Switcher -->
-        <button id="userProfileBtn" class="user-profile-btn" title="Switch Account">
+        <!-- Private Account Profile Button -->
+        <button id="userProfileBtn" class="user-profile-btn" title="My Account">
           <img id="currentAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Trader" alt="User Avatar" class="avatar-img">
           <span id="currentUserName" class="user-name-label">Trader</span>
-          <span class="switch-icon">▼</span>
         </button>
       </div>
     </header>
@@ -133,7 +124,7 @@
 
         <!-- Mobile Chat Input Bar -->
         <div class="chat-input-bar">
-          <button id="clearChatBtn" class="icon-btn-secondary" title="Clear Chat">🗑️</button>
+          <button id="clearChatBtn" class="icon-btn-secondary" title="Clear My Chat">🗑️</button>
           <input type="text" id="userInput" placeholder="Ask about any stock (RELIANCE, INFY), OI data, or strategies..." autocomplete="off">
           <button id="sendBtn" class="send-btn">
             <span>Send</span>
@@ -219,38 +210,29 @@
       </button>
     </nav>
 
-    <!-- Multi-User Account Switcher Modal -->
+    <!-- 100% PRIVATE "My Account" Modal (NO other users visible) -->
     <div id="userModal" class="modal-overlay hidden">
       <div class="modal-card">
         <div class="modal-header">
-          <h3>👥 Switch Trader Account or Sign Out</h3>
+          <h3>👤 My Account</h3>
           <button id="closeModalBtn" class="close-btn">✕</button>
         </div>
 
         <div class="modal-body">
-          <div class="section-title">Saved Trader Accounts</div>
-          <div class="user-list" id="presetUserList">
-            <!-- Preset accounts -->
+          <div class="private-profile-card">
+            <img id="myAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Trader" class="avatar-img-large">
+            <div class="profile-details">
+              <h4 id="myProfileName">Trader Name</h4>
+              <p id="myProfileEmail">trader@gmail.com</p>
+              <span class="privacy-badge">🔒 Private Session Active</span>
+            </div>
           </div>
 
-          <div class="divider"><span>OR</span></div>
-
-          <div class="section-title">Sign In with New Gmail ID</div>
-          <form id="gmailLoginForm" class="gmail-form">
-            <div class="input-group">
-              <label for="gmailInput">Gmail Address:</label>
-              <input type="email" id="gmailInput" placeholder="trader@gmail.com" required>
-            </div>
-            <div class="input-group">
-              <label for="nameInput">Trader Name (Optional):</label>
-              <input type="text" id="nameInput" placeholder="e.g. Amit Kumar">
-            </div>
-            <button type="submit" class="primary-btn-block">Sign In / Switch Profile</button>
-          </form>
-          
-          <button id="signOutBtn" class="signout-btn" style="margin-top:12px; width:100%; padding:8px; background:rgba(239, 68, 68, 0.1); color:var(--accent-red); border:1px solid var(--accent-red); border-radius:8px; cursor:pointer;">
-            🚪 Sign Out of Current Account
-          </button>
+          <div style="margin-top:20px; border-top:1px solid var(--border-color); padding-top:16px;">
+            <button id="signOutBtn" class="signout-btn" style="width:100%; padding:10px; background:rgba(239, 68, 68, 0.1); color:var(--accent-red); border:1px solid var(--accent-red); border-radius:10px; font-weight:600; cursor:pointer;">
+              🚪 Sign Out of My Account
+            </button>
+          </div>
         </div>
       </div>
     </div>

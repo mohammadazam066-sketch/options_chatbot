@@ -1,4 +1,4 @@
-/* OptionPulse AI - Mobile-First Safe-Area Viewport Styling */
+/* OptionPulse AI - Private Trading Platform Styles */
 
 body.dark-theme {
   --bg-dark: #090d16;
@@ -149,33 +149,45 @@ body {
   opacity: 0.9;
 }
 
-.demo-login-prompt {
-  margin-top: 16px;
-  text-align: center;
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.demo-chips {
+/* Private Profile Card in Modal */
+.private-profile-card {
   display: flex;
-  gap: 6px;
-  justify-content: center;
-  margin-top: 6px;
-}
-
-.demo-chip-btn {
+  align-items: center;
+  gap: 14px;
   background: var(--bg-dark);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  padding: 4px 8px;
+  padding: 14px;
   border-radius: 12px;
-  font-size: 11px;
-  cursor: pointer;
+  border: 1px solid var(--border-color);
 }
 
-.demo-chip-btn:hover {
-  border-color: var(--accent-blue);
-  color: var(--accent-blue);
+.avatar-img-large {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--border-color);
+}
+
+.profile-details h4 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.profile-details p {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.privacy-badge {
+  display: inline-block;
+  font-size: 10px;
+  color: var(--accent-green);
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 600;
 }
 
 /* App Container with Safe Area Insets */
@@ -242,38 +254,6 @@ body {
   gap: 6px;
 }
 
-/* Broker Connect Button */
-.broker-connect-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  background: rgba(34, 197, 94, 0.1);
-  color: var(--accent-green);
-  border: 1px solid rgba(34, 197, 94, 0.3);
-  padding: 4px 8px;
-  border-radius: 16px;
-  font-size: 11px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.broker-connect-btn.connected {
-  background: rgba(34, 197, 94, 0.2);
-  color: var(--accent-green);
-  border-color: var(--accent-green);
-}
-
-.broker-label {
-  display: none;
-}
-
-@media (min-width: 540px) {
-  .broker-label {
-    display: inline;
-  }
-}
-
 /* Theme Toggle Button */
 .theme-toggle-btn {
   display: flex;
@@ -330,11 +310,6 @@ body {
 .user-name-label {
   font-size: 12px;
   font-weight: 500;
-}
-
-.switch-icon {
-  font-size: 8px;
-  color: var(--text-muted);
 }
 
 /* Main Layout */
@@ -718,7 +693,7 @@ body {
   border: 1px solid var(--border-color);
   border-radius: 14px;
   width: 100%;
-  max-width: 440px;
+  max-width: 400px;
   padding: 18px;
 }
 
@@ -736,87 +711,6 @@ body {
   border: none;
   color: var(--text-muted);
   font-size: 18px;
-  cursor: pointer;
-}
-
-.section-title {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-bottom: 8px;
-  text-transform: uppercase;
-}
-
-.user-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.user-card-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  background: var(--bg-dark);
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.user-card-item.active {
-  border-color: var(--accent-green);
-  background: rgba(34, 197, 94, 0.08);
-}
-
-.divider {
-  text-align: center;
-  margin: 12px 0;
-  border-bottom: 1px solid var(--border-color);
-  line-height: 0.1em;
-}
-
-.divider span {
-  background: var(--bg-card);
-  padding: 0 8px;
-  color: var(--text-muted);
-  font-size: 10px;
-}
-
-.gmail-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.input-group {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.input-group label {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.input-group input {
-  background: var(--bg-dark);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  padding: 8px 10px;
-  border-radius: 8px;
-  font-size: 13px;
-  outline: none;
-}
-
-.primary-btn-block {
-  background: var(--accent-blue);
-  color: #ffffff;
-  font-weight: 600;
-  border: none;
-  padding: 8px;
-  border-radius: 8px;
-  font-size: 13px;
   cursor: pointer;
 }
 
