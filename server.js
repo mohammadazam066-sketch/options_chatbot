@@ -56,7 +56,13 @@ app.post('/api/chat/send', async (req, res) => {
   }
 
   try {
-    const responseMessage = await geminiChatbot.handleUserQuery(gmailId, message, symbol || 'NIFTY');
+    const user = userManager.getUserByGmail(gmailId) || { name: 'Trader' };
+    const responseMessage = await geminiChatbot.processUserQuery(message, symbol || 'NIFTY', user);
+    
+    // Save both user question and bot answer to user's private chat history
+    userManager.addChatMessage(gmailId, 'user', message);
+    userManager.addChatMessage(gmailId, 'bot', responseMessage.text || responseMessage);
+
     const updatedHistory = userManager.getUserChatHistory(gmailId);
 
     return res.json({

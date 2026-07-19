@@ -9,8 +9,8 @@ let activeUser = null;
 let currentSymbol = 'NIFTY';
 let currentTheme = localStorage.getItem('theme') || 'dark';
 
-// Admin Email Whitelist
-const ADMIN_EMAILS = ['mohammadazam066@gmail.com', 'mohammadazam066'];
+// STRICT ADMIN EMAIL ONLY
+const ADMIN_EMAIL = 'mohammadazam066@gmail.com';
 
 // DOM Elements
 const welcomeScreen = document.getElementById('welcomeScreen');
@@ -166,12 +166,10 @@ function setupEventListeners() {
         if (myProfileName) myProfileName.innerText = activeUser.name;
         if (myProfileEmail) myProfileEmail.innerText = activeUser.gmailId;
 
-        // Check if logged in user is Admin (mohammadazam066@gmail.com)
-        const emailLower = activeUser.gmailId.toLowerCase();
-        const isAdmin = ADMIN_EMAILS.some(admin => emailLower.includes(admin));
-
+        // STRICT CHECK: ONLY EXACT MATCH mohammadazam066@gmail.com SEES THE UPSTOX BUTTON
+        const currentEmail = (activeUser.gmailId || '').trim().toLowerCase();
         if (adminConnectContainer) {
-          if (isAdmin) {
+          if (currentEmail === ADMIN_EMAIL) {
             adminConnectContainer.classList.remove('hidden');
           } else {
             adminConnectContainer.classList.add('hidden');
@@ -322,10 +320,18 @@ async function sendMessage() {
 
     removeElement(typingId);
 
-    if (data.success && data.updatedHistory) {
-      renderChatHistory(data.updatedHistory);
-    } else if (data.message) {
-      appendChatBubble(data.message);
+    if (data.success) {
+      if (data.updatedHistory) {
+        renderChatHistory(data.updatedHistory);
+      } else if (data.message) {
+        appendChatBubble(data.message);
+      }
+    } else {
+      appendChatBubble({
+        sender: 'bot',
+        text: '⚠️ Unable to process request. Please try again.',
+        timestamp: new Date().toISOString()
+      });
     }
   } catch (err) {
     removeElement(typingId);
@@ -370,10 +376,12 @@ function appendChatBubble(msg) {
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${msg.sender}`;
 
+  const textContent = msg.text || (typeof msg === 'string' ? msg : '');
+
   if (msg.sender === 'user') {
-    bubble.innerText = msg.text;
+    bubble.innerText = textContent;
   } else {
-    bubble.innerHTML = window.marked ? marked.parse(msg.text) : msg.text;
+    bubble.innerHTML = window.marked ? marked.parse(textContent) : textContent;
   }
 
   const timeStr = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
