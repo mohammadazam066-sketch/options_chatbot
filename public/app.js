@@ -74,13 +74,13 @@ async function startUserSession(email, name = '') {
   try {
     await loginUser(email, name);
     
-    // Dual Sync: Load local backup first so chat is instant & never missing
+    // Dual Sync: Load local backup first
     const localBackup = getLocalChatBackup(email);
     if (localBackup && localBackup.length > 0) {
       renderChatHistory(localBackup);
     }
 
-    // Fetch server history and merge/update
+    // Fetch server history
     await fetchChatHistory(email);
 
     if (welcomeScreen) welcomeScreen.classList.add('hidden');
@@ -95,7 +95,7 @@ async function startUserSession(email, name = '') {
   }
 }
 
-// LocalStorage Backup Helpers (Guarantees zero lost chats)
+// LocalStorage Backup Helpers
 function getLocalChatBackup(gmailId) {
   try {
     const key = `optionpulse_chat_${gmailId.toLowerCase().trim()}`;
@@ -525,10 +525,14 @@ function renderOptionChainPreview(strikes) {
   sliced.forEach(row => {
     const tr = document.createElement('tr');
     if (row.isATM) tr.className = 'atm-row';
+
+    const callDisplay = row.call.oiFormatted || '0';
+    const putDisplay = row.put.oiFormatted || '0';
+
     tr.innerHTML = `
-      <td class="val-red">${row.call.oiChangeFormatted}</td>
+      <td class="val-red">${callDisplay}</td>
       <td><strong>${row.strike}</strong> ${row.isATM ? '📌 ATM' : ''}</td>
-      <td class="val-green">${row.put.oiChangeFormatted}</td>
+      <td class="val-green">${putDisplay}</td>
     `;
     tbody.appendChild(tr);
   });
