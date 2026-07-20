@@ -17,11 +17,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Health Check API
 app.get('/api/health', (req, res) => {
+  const token = userManager.getUpstoxToken();
   res.json({
     status: 'online',
     app: 'Options & Futures AI Chatbot Platform',
-    upstoxConnected: !!process.env.UPSTOX_ACCESS_TOKEN,
-    dataSource: process.env.UPSTOX_ACCESS_TOKEN ? 'Upstox API v2 Live Feed' : 'Yahoo Finance / NSE Live Exchange Spot Feed',
+    upstoxConnected: !!token,
+    dataSource: token ? 'Upstox API v2 Live Exchange Feed 🟢' : 'NSE Live Exchange Spot Feed 🟢',
     timestamp: new Date().toISOString()
   });
 });
@@ -113,11 +114,10 @@ app.get('/api/market/option-chain', async (req, res) => {
   return res.json({ chain });
 });
 
-// Upstox OAuth Login Direct Redirect (Supports both localhost and Production domain)
+// Upstox OAuth Login Direct Redirect
 app.get('/api/auth/upstox/login', (req, res) => {
   const apiKey = process.env.UPSTOX_API_KEY || '8c31c6b1-15ac-4812-87ab-9bfb4f62402b';
   
-  // Build dynamic redirect URI for production (https://www.diamondchatbot.online/api/auth/upstox/callback)
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   const protocol = req.headers['x-forwarded-proto'] || req.protocol;
   const defaultCallback = `${protocol}://${host}/api/auth/upstox/callback`;
@@ -126,11 +126,10 @@ app.get('/api/auth/upstox/login', (req, res) => {
   const redirectUri = encodeURIComponent(redirectUriRaw);
   
   const authUrl = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${apiKey}&redirect_uri=${redirectUri}`;
-  console.log('[Upstox Login] Initiating OAuth redirect to:', redirectUriRaw);
   res.redirect(authUrl);
 });
 
-// Upstox OAuth Callback Endpoint for Production & Localhost
+// Upstox OAuth Callback Endpoint with Persistent Disk Storage
 app.get('/api/auth/upstox/callback', async (req, res) => {
   const { code } = req.query;
   if (!code) {
@@ -164,22 +163,9 @@ app.get('/api/auth/upstox/callback', async (req, res) => {
     const tokenData = await response.json();
 
     if (tokenData.access_token) {
-      process.env.UPSTOX_ACCESS_TOKEN = tokenData.access_token;
-      
-      const envPath = path.join(__dirname, '.env');
-      let envContent = '';
-      if (fs.existsSync(envPath)) {
-        envContent = fs.readFileSync(envPath, 'utf8');
-      }
-
-      if (envContent.includes('UPSTOX_ACCESS_TOKEN=')) {
-        envContent = envContent.replace(/UPSTOX_ACCESS_TOKEN=.*/, `UPSTOX_ACCESS_TOKEN=${tokenData.access_token}`);
-      } else {
-        envContent += `\nUPSTOX_ACCESS_TOKEN=${tokenData.access_token}\n`;
-      }
-
-      fs.writeFileSync(envPath, envContent);
-      console.log('[Upstox Callback] Successfully received access token!');
+      // PERSIST TOKEN TO DISK DATABASE
+      userManager.saveUpstoxToken(tokenData.access_token);
+      console.log('[Upstox Callback] Successfully received and saved persistent access token!');
 
       return res.send(`
         <!DOCTYPE html>
@@ -187,8 +173,8 @@ app.get('/api/auth/upstox/callback', async (req, res) => {
         <head><title>Upstox Connected</title></head>
         <body style="font-family:sans-serif; text-align:center; padding:40px; background:#090d16; color:#fff;">
           <h2 style="color:#22c55e;">⚡ Upstox Connected Successfully!</h2>
-          <p>Your live 24-hour exchange data feed is now active on OptionPulse AI.</p>
-          <a href="/" style="display:inline-block; margin-top:20px; padding:10px 20px; background:#38bdf8; color:#000; text-decoration:none; border-radius:20px; font-weight:bold;">Return to Dashboard ➔</a>
+          <p style="color:#8b9bb4;">Your live 24-hour exchange data feed is now active across all trader dashboards.</p>
+          <a href="/" style="display:inline-block; margin-top:20px; padding:12px 24px; background:#38bdf8; color:#000; text-decoration:none; border-radius:20px; font-weight:bold;">Return to Dashboard ➔</a>
         </body>
         </html>
       `);

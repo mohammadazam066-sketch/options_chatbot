@@ -121,7 +121,7 @@ async function checkBrokerStatus() {
     const res = await fetch('/api/health');
     const data = await res.json();
     if (data.upstoxConnected) {
-      if (dataSourceBadge) dataSourceBadge.innerText = 'Upstox API Live 🔴';
+      if (dataSourceBadge) dataSourceBadge.innerText = 'Upstox API Live 🟢';
     } else {
       if (dataSourceBadge) dataSourceBadge.innerText = 'F&O Live Feed 🟢';
     }
