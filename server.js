@@ -113,15 +113,24 @@ app.get('/api/market/option-chain', async (req, res) => {
   return res.json({ chain });
 });
 
-// Upstox OAuth Login Direct Redirect
+// Upstox OAuth Login Direct Redirect (Supports both localhost and Production domain)
 app.get('/api/auth/upstox/login', (req, res) => {
   const apiKey = process.env.UPSTOX_API_KEY || '8c31c6b1-15ac-4812-87ab-9bfb4f62402b';
-  const redirectUri = encodeURIComponent(process.env.UPSTOX_REDIRECT_URI || 'http://127.0.0.1:5000/');
+  
+  // Build dynamic redirect URI for production (https://www.diamondchatbot.online/api/auth/upstox/callback)
+  const host = req.headers['x-forwarded-host'] || req.headers.host;
+  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+  const defaultCallback = `${protocol}://${host}/api/auth/upstox/callback`;
+  
+  const redirectUriRaw = process.env.UPSTOX_REDIRECT_URI || defaultCallback;
+  const redirectUri = encodeURIComponent(redirectUriRaw);
+  
   const authUrl = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${apiKey}&redirect_uri=${redirectUri}`;
+  console.log('[Upstox Login] Initiating OAuth redirect to:', redirectUriRaw);
   res.redirect(authUrl);
 });
 
-// Upstox OAuth Callback Endpoint for Production
+// Upstox OAuth Callback Endpoint for Production & Localhost
 app.get('/api/auth/upstox/callback', async (req, res) => {
   const { code } = req.query;
   if (!code) {
@@ -131,7 +140,11 @@ app.get('/api/auth/upstox/callback', async (req, res) => {
   try {
     const apiKey = process.env.UPSTOX_API_KEY || '8c31c6b1-15ac-4812-87ab-9bfb4f62402b';
     const apiSecret = process.env.UPSTOX_API_SECRET || 'egotcpt07r';
-    const redirectUri = process.env.UPSTOX_REDIRECT_URI || 'http://127.0.0.1:5000/';
+    
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const defaultCallback = `${protocol}://${host}/api/auth/upstox/callback`;
+    const redirectUri = process.env.UPSTOX_REDIRECT_URI || defaultCallback;
 
     const response = await fetch('https://api.upstox.com/v2/login/authorization/token', {
       method: 'POST',
@@ -166,12 +179,24 @@ app.get('/api/auth/upstox/callback', async (req, res) => {
       }
 
       fs.writeFileSync(envPath, envContent);
-      return res.send('<h2>Upstox Connected Successfully!</h2><p>You can close this window.</p>');
+      console.log('[Upstox Callback] Successfully received access token!');
+
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Upstox Connected</title></head>
+        <body style="font-family:sans-serif; text-align:center; padding:40px; background:#090d16; color:#fff;">
+          <h2 style="color:#22c55e;">⚡ Upstox Connected Successfully!</h2>
+          <p>Your live 24-hour exchange data feed is now active on OptionPulse AI.</p>
+          <a href="/" style="display:inline-block; margin-top:20px; padding:10px 20px; background:#38bdf8; color:#000; text-decoration:none; border-radius:20px; font-weight:bold;">Return to Dashboard ➔</a>
+        </body>
+        </html>
+      `);
     } else {
-      return res.status(400).json({ error: 'Failed to retrieve access token.', details: tokenData });
+      return res.status(400).send(`<h2>Upstox Login Error</h2><pre>${JSON.stringify(tokenData, null, 2)}</pre>`);
     }
   } catch (err) {
-    return res.status(500).json({ error: 'OAuth exchange failed.', message: err.message });
+    return res.status(500).send(`<h2>OAuth Exchange Error</h2><p>${err.message}</p>`);
   }
 });
 
