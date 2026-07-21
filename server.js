@@ -114,9 +114,9 @@ app.get('/api/market/option-chain', async (req, res) => {
   return res.json({ chain });
 });
 
-// Upstox OAuth Login Direct Redirect
+// Upstox OAuth Login Direct Redirect (Production Dedicated App: Diamond Chatbot)
 app.get('/api/auth/upstox/login', (req, res) => {
-  const apiKey = process.env.UPSTOX_API_KEY || '8c31c6b1-15ac-4812-87ab-9bfb4f62402b';
+  const apiKey = process.env.UPSTOX_API_KEY || '6a578381-2643-480c-bbaf-fabd5f15ca26';
   
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   const protocol = req.headers['x-forwarded-proto'] || req.protocol;
@@ -126,10 +126,11 @@ app.get('/api/auth/upstox/login', (req, res) => {
   const redirectUri = encodeURIComponent(redirectUriRaw);
   
   const authUrl = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${apiKey}&redirect_uri=${redirectUri}`;
+  console.log('[Upstox Login] Redirecting with dedicated API Key:', apiKey);
   res.redirect(authUrl);
 });
 
-// Upstox OAuth Callback Endpoint with Persistent Disk Storage
+// Upstox OAuth Callback Endpoint with Persistent Storage
 app.get('/api/auth/upstox/callback', async (req, res) => {
   const { code } = req.query;
   if (!code) {
@@ -137,13 +138,15 @@ app.get('/api/auth/upstox/callback', async (req, res) => {
   }
 
   try {
-    const apiKey = process.env.UPSTOX_API_KEY || '8c31c6b1-15ac-4812-87ab-9bfb4f62402b';
-    const apiSecret = process.env.UPSTOX_API_SECRET || 'egotcpt07r';
+    const apiKey = process.env.UPSTOX_API_KEY || '6a578381-2643-480c-bbaf-fabd5f15ca26';
+    const apiSecret = process.env.UPSTOX_API_SECRET || '98lifiqs5t';
     
     const host = req.headers['x-forwarded-host'] || req.headers.host;
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const defaultCallback = `${protocol}://${host}/api/auth/upstox/callback`;
     const redirectUri = process.env.UPSTOX_REDIRECT_URI || defaultCallback;
+
+    console.log('[Upstox Callback] Exchanging token with dedicated API Key:', apiKey);
 
     const response = await fetch('https://api.upstox.com/v2/login/authorization/token', {
       method: 'POST',
@@ -163,7 +166,6 @@ app.get('/api/auth/upstox/callback', async (req, res) => {
     const tokenData = await response.json();
 
     if (tokenData.access_token) {
-      // PERSIST TOKEN TO DISK DATABASE
       userManager.saveUpstoxToken(tokenData.access_token);
       console.log('[Upstox Callback] Successfully received and saved persistent access token!');
 
@@ -172,8 +174,8 @@ app.get('/api/auth/upstox/callback', async (req, res) => {
         <html>
         <head><title>Upstox Connected</title></head>
         <body style="font-family:sans-serif; text-align:center; padding:40px; background:#090d16; color:#fff;">
-          <h2 style="color:#22c55e;">⚡ Upstox Connected Successfully!</h2>
-          <p style="color:#8b9bb4;">Your live 24-hour exchange data feed is now active across all trader dashboards.</p>
+          <h2 style="color:#22c55e;">⚡ Upstox Live Feed Connected Successfully!</h2>
+          <p style="color:#8b9bb4;">Your dedicated broker data feed is now active on Diamond Chatbot.</p>
           <a href="/" style="display:inline-block; margin-top:20px; padding:12px 24px; background:#38bdf8; color:#000; text-decoration:none; border-radius:20px; font-weight:bold;">Return to Dashboard ➔</a>
         </body>
         </html>
