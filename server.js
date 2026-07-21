@@ -114,20 +114,15 @@ app.get('/api/market/option-chain', async (req, res) => {
   return res.json({ chain });
 });
 
-function getDynamicRedirectUri(req) {
-  const host = req.headers['x-forwarded-host'] || req.headers.host;
-  const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-  return `${protocol}://${host}/api/auth/upstox/callback`;
-}
+const EXACT_PROD_CALLBACK = 'https://www.diamondchatbot.online/api/auth/upstox/callback';
 
-// Upstox OAuth Login Direct Redirect (Production Dedicated App: Diamond Chatbot)
+// Upstox OAuth Login Direct Redirect (Production Dedicated App: Diamondchatbot)
 app.get('/api/auth/upstox/login', (req, res) => {
   const apiKey = '6a578381-2643-480c-bbaf-fabd5f15ca26';
-  const redirectUriRaw = getDynamicRedirectUri(req);
-  const redirectUri = encodeURIComponent(redirectUriRaw);
+  const redirectUri = encodeURIComponent(EXACT_PROD_CALLBACK);
   
   const authUrl = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${apiKey}&redirect_uri=${redirectUri}`;
-  console.log('[Upstox Login] Redirecting with API Key:', apiKey, 'and Redirect URI:', redirectUriRaw);
+  console.log('[Upstox Login] Redirecting with API Key:', apiKey, 'and Redirect URI:', EXACT_PROD_CALLBACK);
   res.redirect(authUrl);
 });
 
@@ -141,7 +136,7 @@ app.get('/api/auth/upstox/callback', async (req, res) => {
   try {
     const apiKey = '6a578381-2643-480c-bbaf-fabd5f15ca26';
     const apiSecret = '98lifiqs5t';
-    const redirectUri = getDynamicRedirectUri(req);
+    const redirectUri = EXACT_PROD_CALLBACK;
 
     console.log('[Upstox Callback] Exchanging code with API Key:', apiKey, 'and Redirect URI:', redirectUri);
 
