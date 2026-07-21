@@ -1,6 +1,6 @@
 /**
  * OptionPulse AI Client Application
- * Features Strict Private Onboarding, Gmail Auth, Persistent Dual-Sync Chat History (Server + LocalStorage Backup), Theme Switcher & Upstox Live Stream
+ * Features Strict Private Onboarding, Gmail Auth, 12-Hour Retention Dual-Sync Chat History, Theme Switcher & Upstox Live Stream
  */
 
 // Application State
@@ -8,6 +8,8 @@ let activeGmailId = localStorage.getItem('activeGmailId') || null;
 let activeUser = null;
 let currentSymbol = 'NIFTY';
 let currentTheme = localStorage.getItem('theme') || 'dark';
+
+const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
 
 // STRICT ADMIN EMAIL ONLY
 const ADMIN_EMAIL = 'mohammadazam066@gmail.com';
@@ -72,13 +74,12 @@ function showWelcomeScreen() {
 
 async function startUserSession(email, name = '') {
   try {
-    // 1. Render Local Storage Backup Immediately so chat is 100% visible on refresh
+    // Render Local Backup (filtered for 12-hour validity)
     const localBackup = getLocalChatBackup(email);
     if (localBackup && localBackup.length > 0) {
       renderChatHistory(localBackup);
     }
 
-    // 2. Login & Sync with Server
     await loginUser(email, name);
     await fetchChatHistory(email);
 
@@ -94,12 +95,23 @@ async function startUserSession(email, name = '') {
   }
 }
 
-// LocalStorage Backup Helpers (Guarantees zero lost chats)
+// LocalStorage Backup Helpers with 12-Hour Auto Expiry
 function getLocalChatBackup(gmailId) {
   try {
     const key = `optionpulse_chat_${gmailId.toLowerCase().trim()}`;
     const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const history = JSON.parse(raw);
+    const now = Date.now();
+    const valid = history.filter(msg => {
+      if (!msg.timestamp) return true;
+      return (now - new Date(msg.timestamp).getTime()) <= TWELVE_HOURS_MS;
+    });
+
+    if (valid.length !== history.length) {
+      saveLocalChatBackup(gmailId, valid);
+    }
+    return valid;
   } catch (e) {
     return null;
   }
@@ -114,18 +126,21 @@ function saveLocalChatBackup(gmailId, history) {
   }
 }
 
-// Merges server and local chat histories without losing any user messages
+// Merges server and local chat histories within 12-hour window
 function mergeHistories(serverHist = [], localHist = []) {
-  if (!Array.isArray(serverHist) || serverHist.length === 0) return localHist;
-  if (!Array.isArray(localHist) || localHist.length === 0) return serverHist;
+  const now = Date.now();
+  const filterOld = list => list.filter(item => {
+    if (!item || !item.text) return false;
+    if (!item.timestamp) return true;
+    return (now - new Date(item.timestamp).getTime()) <= TWELVE_HOURS_MS;
+  });
+
+  const validServer = filterOld(serverHist);
+  const validLocal = filterOld(localHist);
 
   const map = new Map();
-  localHist.forEach(item => {
-    if (item && item.text) map.set(item.id || item.text, item);
-  });
-  serverHist.forEach(item => {
-    if (item && item.text) map.set(item.id || item.text, item);
-  });
+  validLocal.forEach(item => map.set(item.id || item.text, item));
+  validServer.forEach(item => map.set(item.id || item.text, item));
 
   return Array.from(map.values()).sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
 }
