@@ -114,19 +114,20 @@ app.get('/api/market/option-chain', async (req, res) => {
   return res.json({ chain });
 });
 
-// Upstox OAuth Login Direct Redirect (Production Dedicated App: Diamond Chatbot)
-app.get('/api/auth/upstox/login', (req, res) => {
-  const apiKey = process.env.UPSTOX_API_KEY || '6a578381-2643-480c-bbaf-fabd5f15ca26';
-  
+function getDynamicRedirectUri(req) {
   const host = req.headers['x-forwarded-host'] || req.headers.host;
   const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-  const defaultCallback = `${protocol}://${host}/api/auth/upstox/callback`;
-  
-  const redirectUriRaw = process.env.UPSTOX_REDIRECT_URI || defaultCallback;
+  return `${protocol}://${host}/api/auth/upstox/callback`;
+}
+
+// Upstox OAuth Login Direct Redirect (Production Dedicated App: Diamond Chatbot)
+app.get('/api/auth/upstox/login', (req, res) => {
+  const apiKey = '6a578381-2643-480c-bbaf-fabd5f15ca26';
+  const redirectUriRaw = getDynamicRedirectUri(req);
   const redirectUri = encodeURIComponent(redirectUriRaw);
   
   const authUrl = `https://api.upstox.com/v2/login/authorization/dialog?response_type=code&client_id=${apiKey}&redirect_uri=${redirectUri}`;
-  console.log('[Upstox Login] Redirecting with dedicated API Key:', apiKey);
+  console.log('[Upstox Login] Redirecting with API Key:', apiKey, 'and Redirect URI:', redirectUriRaw);
   res.redirect(authUrl);
 });
 
@@ -138,15 +139,11 @@ app.get('/api/auth/upstox/callback', async (req, res) => {
   }
 
   try {
-    const apiKey = process.env.UPSTOX_API_KEY || '6a578381-2643-480c-bbaf-fabd5f15ca26';
-    const apiSecret = process.env.UPSTOX_API_SECRET || '98lifiqs5t';
-    
-    const host = req.headers['x-forwarded-host'] || req.headers.host;
-    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const defaultCallback = `${protocol}://${host}/api/auth/upstox/callback`;
-    const redirectUri = process.env.UPSTOX_REDIRECT_URI || defaultCallback;
+    const apiKey = '6a578381-2643-480c-bbaf-fabd5f15ca26';
+    const apiSecret = '98lifiqs5t';
+    const redirectUri = getDynamicRedirectUri(req);
 
-    console.log('[Upstox Callback] Exchanging token with dedicated API Key:', apiKey);
+    console.log('[Upstox Callback] Exchanging code with API Key:', apiKey, 'and Redirect URI:', redirectUri);
 
     const response = await fetch('https://api.upstox.com/v2/login/authorization/token', {
       method: 'POST',
