@@ -26,6 +26,7 @@
 
       <div class="welcome-features">
         <div class="feat-item">✨ Simple Language Open Interest (OI) Analysis</div>
+        <div class="feat-item">📅 Weekly Expiry Dates & Level Alerts</div>
         <div class="feat-item">⚡ Live NIFTY, BANK NIFTY & SENSEX Sentiment</div>
         <div class="feat-item">🔒 100% Private & Encrypted Chat History</div>
       </div>
@@ -86,11 +87,15 @@
       <!-- SECTION 1: Chat View -->
       <section id="chatView" class="view-section active-view">
         
-        <!-- Live Market Ticker Strip -->
+        <!-- Live Market Ticker Strip (With Expiry Date) -->
         <div class="market-ticker" id="marketTicker">
           <div class="ticker-item">
             <span class="ticker-label">Spot:</span>
             <span id="tickerSpot" class="ticker-val">Loading...</span>
+          </div>
+          <div class="ticker-item">
+            <span class="ticker-label">Expiry:</span>
+            <span id="tickerExpiry" class="ticker-val" style="color:var(--accent-blue); font-weight:700;">--</span>
           </div>
           <div class="ticker-item">
             <span class="ticker-label">PCR:</span>
@@ -113,7 +118,7 @@
             <button class="chip-btn" data-query="Analyze RELIANCE option buying setup">📈 Analyze RELIANCE</button>
             <button class="chip-btn" data-query="Is market Bullish or Bearish based on PCR today?">📊 Bullish or Bearish?</button>
             <button class="chip-btn" data-query="Where is Strongest Support and Resistance for Nifty?">🎯 Support & Resistance</button>
-            <button class="chip-btn" data-query="What is the OI change for ATM Strike?">⚡ ATM Strike OI Change</button>
+            <button class="chip-btn" data-query="What is the weekly expiry date and OI change for ATM Strike?">📅 Expiry & ATM OI</button>
             <button class="chip-btn" data-query="Explain Short Covering in simple words">💡 Short Covering?</button>
           </div>
         </div>
@@ -126,7 +131,7 @@
         <!-- Mobile Chat Input Bar -->
         <div class="chat-input-bar">
           <button id="clearChatBtn" class="icon-btn-secondary" title="Clear My Chat">🗑️</button>
-          <input type="text" id="userInput" placeholder="Ask about SENSEX, NIFTY, stocks (RELIANCE, INFY), or OI data..." autocomplete="off">
+          <input type="text" id="userInput" placeholder="Ask about Expiry, SENSEX, NIFTY, stocks (RELIANCE), or OI..." autocomplete="off">
           <button id="sendBtn" class="send-btn">
             <span>Send</span>
             <span class="send-icon">➔</span>
@@ -149,6 +154,10 @@
             <div class="metric-box">
               <span class="m-label">Real Spot Price</span>
               <span id="mSpot" class="m-val">₹--</span>
+            </div>
+            <div class="metric-box highlight-blue">
+              <span class="m-label">Upcoming Weekly Expiry</span>
+              <span id="mExpiry" class="m-val" style="color:var(--accent-blue);">--</span>
             </div>
             <div class="metric-box">
               <span class="m-label">Put-Call Ratio (PCR)</span>

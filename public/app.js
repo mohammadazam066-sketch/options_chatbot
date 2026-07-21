@@ -72,15 +72,14 @@ function showWelcomeScreen() {
 
 async function startUserSession(email, name = '') {
   try {
-    await loginUser(email, name);
-    
-    // Dual Sync: Load local backup first
+    // 1. Render Local Storage Backup Immediately so chat is 100% visible on refresh
     const localBackup = getLocalChatBackup(email);
     if (localBackup && localBackup.length > 0) {
       renderChatHistory(localBackup);
     }
 
-    // Fetch server history
+    // 2. Login & Sync with Server
+    await loginUser(email, name);
     await fetchChatHistory(email);
 
     if (welcomeScreen) welcomeScreen.classList.add('hidden');
@@ -95,7 +94,7 @@ async function startUserSession(email, name = '') {
   }
 }
 
-// LocalStorage Backup Helpers
+// LocalStorage Backup Helpers (Guarantees zero lost chats)
 function getLocalChatBackup(gmailId) {
   try {
     const key = `optionpulse_chat_${gmailId.toLowerCase().trim()}`;
@@ -113,6 +112,22 @@ function saveLocalChatBackup(gmailId, history) {
   } catch (e) {
     console.warn('Failed to save chat to localStorage backup:', e);
   }
+}
+
+// Merges server and local chat histories without losing any user messages
+function mergeHistories(serverHist = [], localHist = []) {
+  if (!Array.isArray(serverHist) || serverHist.length === 0) return localHist;
+  if (!Array.isArray(localHist) || localHist.length === 0) return serverHist;
+
+  const map = new Map();
+  localHist.forEach(item => {
+    if (item && item.text) map.set(item.id || item.text, item);
+  });
+  serverHist.forEach(item => {
+    if (item && item.text) map.set(item.id || item.text, item);
+  });
+
+  return Array.from(map.values()).sort((a, b) => new Date(a.timestamp || 0) - new Date(b.timestamp || 0));
 }
 
 // Check Broker Status
@@ -289,10 +304,10 @@ async function loginUser(gmailId, displayName = '') {
       if (currentAvatar) currentAvatar.src = activeUser.avatar;
       if (currentUserName) currentUserName.innerText = activeUser.name;
 
-      if (data.user.chatHistory && data.user.chatHistory.length > 0) {
-        renderChatHistory(data.user.chatHistory);
-        saveLocalChatBackup(activeGmailId, data.user.chatHistory);
-      }
+      const localBackup = getLocalChatBackup(activeGmailId) || [];
+      const merged = mergeHistories(data.user.chatHistory || [], localBackup);
+      renderChatHistory(merged);
+      saveLocalChatBackup(activeGmailId, merged);
     }
   } catch (err) {
     console.error('Failed to log in user:', err);
@@ -314,15 +329,10 @@ async function fetchChatHistory(gmailId) {
   try {
     const res = await fetch(`/api/chat/history?gmailId=${encodeURIComponent(gmailId)}`);
     const data = await res.json();
-    if (data.history && data.history.length > 0) {
-      renderChatHistory(data.history);
-      saveLocalChatBackup(gmailId, data.history);
-    } else {
-      const backup = getLocalChatBackup(gmailId);
-      if (backup && backup.length > 0) {
-        renderChatHistory(backup);
-      }
-    }
+    const localBackup = getLocalChatBackup(gmailId) || [];
+    const merged = mergeHistories(data.history || [], localBackup);
+    renderChatHistory(merged);
+    saveLocalChatBackup(gmailId, merged);
   } catch (err) {
     console.error('Failed to fetch chat history:', err);
     const backup = getLocalChatBackup(gmailId);
@@ -371,8 +381,9 @@ async function sendMessage() {
     removeElement(typingId);
 
     if (data.success && data.updatedHistory) {
-      renderChatHistory(data.updatedHistory);
-      saveLocalChatBackup(activeGmailId, data.updatedHistory);
+      const merged = mergeHistories(data.updatedHistory, getLocalChatBackup(activeGmailId) || []);
+      renderChatHistory(merged);
+      saveLocalChatBackup(activeGmailId, merged);
     } else if (data.message) {
       appendChatBubble(data.message);
       currentBackup.push(data.message);
@@ -473,9 +484,6 @@ async function fetchMarketData() {
     if (summaryData.summary) {
       updateMarketTicker(summaryData.summary);
       updateStatsWidget(summaryData.summary);
-      if (summaryData.summary.expiryDate && expiryBadge) {
-        expiryBadge.innerText = `Expiry: ${summaryData.summary.expiryDate}`;
-      }
     }
 
     if (chainData.chain && chainData.chain.strikes) {
@@ -488,11 +496,13 @@ async function fetchMarketData() {
 
 function updateMarketTicker(s) {
   const spot = document.getElementById('tickerSpot');
+  const expiry = document.getElementById('tickerExpiry');
   const pcr = document.getElementById('tickerPcr');
   const supp = document.getElementById('tickerSupp');
   const res = document.getElementById('tickerRes');
 
   if (spot) spot.innerText = `₹${s.spotPrice}`;
+  if (expiry) expiry.innerText = s.expiryDate || '--';
   if (pcr) pcr.innerText = s.pcr;
   if (supp) supp.innerText = s.support.split('at ')[1]?.split(' ')[0] || '--';
   if (res) res.innerText = s.resistance.split('at ')[1]?.split(' ')[0] || '--';
@@ -500,16 +510,19 @@ function updateMarketTicker(s) {
 
 function updateStatsWidget(s) {
   const mSpot = document.getElementById('mSpot');
+  const mExpiry = document.getElementById('mExpiry');
   const mPcr = document.getElementById('mPcr');
   const mSupport = document.getElementById('mSupport');
   const mResistance = document.getElementById('mResistance');
   const mMaxPain = document.getElementById('mMaxPain');
 
   if (mSpot) mSpot.innerText = `₹${s.spotPrice} (${s.change})`;
+  if (mExpiry) mExpiry.innerText = s.expiryDate || '--';
   if (mPcr) mPcr.innerText = `${s.pcr} (${s.sentiment})`;
   if (mSupport) mSupport.innerText = s.support;
   if (mResistance) mResistance.innerText = s.resistance;
   if (mMaxPain) mMaxPain.innerText = `₹${s.maxPain}`;
+  if (expiryBadge) expiryBadge.innerText = `Expiry: ${s.expiryDate || 'Weekly'}`;
 }
 
 function renderOptionChainPreview(strikes) {
